@@ -11,6 +11,7 @@
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 2 30 9 16 16 2 9Z' fill='%236aab3d'/%3E%3Cpath d='M2 9 16 16v14L2 23Z' fill='%23866043'/%3E%3Cpath d='M16 16 30 9v14l-14 7Z' fill='%23634329'/%3E%3Cpath d='M2 9 16 16v4L2 13Z' fill='%235d9b34'/%3E%3Cpath d='M16 16 30 9v4l-14 7Z' fill='%23467826'/%3E%3C/svg%3E">
   <link rel="preload" href="assets/fonts/jersey-10-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="assets/style.css">
+  <script src="assets/menu.js" defer></script>
   <script src="assets/app.js" defer></script>
 </head>
 <body>
@@ -36,13 +37,22 @@
     </div>
 
     <nav class="topbar wrap" aria-label="Site">
-      <a class="brand-mini" href="#top">
+      <a class="brand-mini" href="./">
         <span class="block-icon" aria-hidden="true"></span>
         <span id="brand-mini-text">SeanSaj</span>
       </a>
-      <div class="topbar-links">
-        <a href="#servers">Servers</a>
-        <a href="#more">Add a server</a>
+      <div class="menu">
+        <button type="button" class="menu-btn" id="menu-btn" aria-expanded="false" aria-controls="menu-panel">
+          <svg class="menu-icon" viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true">
+            <path class="menu-icon-open" d="M2 3h12v2H2zM2 7h12v2H2zM2 11h12v2H2z"/>
+            <path class="menu-icon-close" d="M3 3h2v2H3zM5 5h2v2H5zM7 7h2v2H7zM9 9h2v2H9zM11 11h2v2h-2zM11 3h2v2h-2zM9 5h2v2H9zM5 9h2v2H5zM3 11h2v2H3z"/>
+          </svg>
+          <span>Menu</span>
+        </button>
+        <div class="menu-panel" id="menu-panel" hidden>
+          <p class="menu-title">Pages</p>
+          <ul class="menu-list" id="menu-list"></ul>
+        </div>
       </div>
     </nav>
 

@@ -339,26 +339,130 @@ code {
   filter: drop-shadow(0 2px 0 rgba(0, 0, 0, 0.3));
 }
 
-.topbar-links {
-  display: flex;
-  gap: 6px;
+/* --- Menu --- */
+
+.menu {
+  position: relative;
 }
 
-.topbar-links a {
+.menu-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 16px 0 13px;
+  font: 400 1.15rem/1 var(--font-pixel);
   color: #fff;
-  text-decoration: none;
-  font-size: 0.85rem;
-  font-weight: 600;
-  padding: 7px 12px;
+  background: rgba(0, 0, 0, 0.28);
+  border: 1px solid rgba(255, 255, 255, 0.22);
   border-radius: 999px;
-  background: rgba(0, 0, 0, 0.22);
   -webkit-backdrop-filter: blur(6px);
   backdrop-filter: blur(6px);
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
 
-.topbar-links a:hover {
-  background: rgba(0, 0, 0, 0.38);
+.menu-btn:hover,
+.menu-btn[aria-expanded="true"] {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.menu-icon {
+  width: 16px;
+  height: 16px;
+  fill: currentColor;
+}
+
+.menu-icon-close,
+.menu-btn[aria-expanded="true"] .menu-icon-open {
+  display: none;
+}
+
+.menu-btn[aria-expanded="true"] .menu-icon-close {
+  display: inline;
+}
+
+/* Dropdown styled like a Minecraft inventory panel. */
+.menu-panel {
+  position: absolute;
+  z-index: 15;
+  top: calc(100% + 8px);
+  right: 0;
+  width: min(320px, calc(100vw - 32px));
+  padding: 10px;
+  background: #1d1d22;
+  border: 2px solid #000;
+  border-radius: 6px;
+  box-shadow:
+    inset 0 0 0 2px #4a4a52,
+    0 18px 40px rgba(0, 0, 0, 0.5);
+  transform-origin: top right;
+  animation: menu-in 0.16s ease-out;
+}
+
+@keyframes menu-in {
+  from { opacity: 0; transform: translateY(-6px) scale(0.98); }
+}
+
+.menu-title {
+  margin: 4px 8px 8px;
+  font: 600 0.72rem/1 var(--font);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.menu-list {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.menu-item {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 3px 12px;
+  padding: 10px;
+  color: #fff;
+  text-decoration: none;
+  border: 2px solid transparent;
+  border-radius: 4px;
+}
+
+.menu-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: #fff;
+}
+
+.menu-item[aria-current="page"] {
+  background: rgba(128, 255, 32, 0.08);
+}
+
+.menu-item .h-icon {
+  grid-row: span 2;
+  width: 32px;
+  height: 32px;
+}
+
+.menu-item-title {
+  font: 400 1.3rem/1 var(--font-pixel);
+}
+
+.menu-item-desc {
+  grid-column: 2;
+  font-size: 0.8rem;
+  color: var(--ink-3);
+}
+
+.menu-item-here {
+  grid-column: 3;
+  grid-row: 1 / span 2;
+  font: 400 0.95rem/1 var(--font-pixel);
+  color: var(--xp);
+  white-space: nowrap;
 }
 
 /* --- Logo (title-screen style) --- */
@@ -1551,9 +1655,6 @@ code {
 }
 
 @media (max-width: 520px) {
-  .topbar-links a:first-child {
-    display: none;
-  }
   .hero-stat {
     padding: 10px 6px;
   }
