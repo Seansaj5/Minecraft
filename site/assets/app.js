@@ -5,16 +5,31 @@ const HISTORY_REFRESH_MS = 5 * 60 * 1000;
 const HISTORY_BRANCH = "status-data";
 const WATCHLIST_KEY = "mc-status:watchlist";
 const DAY = 24 * 60 * 60;
-const SLOT = 30 * 60; // one uptime bar = 30 minutes
+const SLOT = 30 * 60; // one uptime block = 30 minutes
 const GAP = 25 * 60; // break the player line when checks are further apart than this
+
+const SPLASHES = [
+  "Now with uptime graphs!",
+  "Don't dig straight down!",
+  "Ping it till it pongs!",
+  "100% pixels!",
+  "Creeper-proof!",
+  "Checked every 10 minutes!",
+  "Hostile mobs not included!",
+  "Punch trees, not servers!",
+  "Bring your friends!",
+  "Lag? Never heard of it!",
+  "Mined with love!",
+  "Made in the Overworld!",
+];
 
 const DEFAULT_ICON =
   "data:image/svg+xml," +
   encodeURIComponent(
-    "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8' shape-rendering='crispEdges'>" +
-      "<rect width='8' height='8' fill='#866043'/><rect width='8' height='3' fill='#5d9b34'/>" +
-      "<rect x='1' y='3' width='1' height='1' fill='#5d9b34'/><rect x='4' y='3' width='2' height='1' fill='#5d9b34'/>" +
-      "<rect x='2' y='5' width='1' height='1' fill='#6b4a30'/><rect x='6' y='6' width='1' height='1' fill='#6b4a30'/></svg>",
+    "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' fill='#1d1d22'/>" +
+      "<path d='M16 5 27 10.5 16 16 5 10.5Z' fill='#6aab3d'/><path d='M5 10.5 16 16v11L5 21.5Z' fill='#866043'/>" +
+      "<path d='M16 16 27 10.5v11L16 27Z' fill='#634329'/><path d='M5 10.5 16 16v3L5 13.5Z' fill='#5d9b34'/>" +
+      "<path d='M16 16 27 10.5v3L16 19Z' fill='#467826'/></svg>",
   );
 
 const MC_COLORS = {
@@ -36,16 +51,23 @@ const els = {};
 const q = (root, sel) => root.querySelector(sel);
 const numberFmt = new Intl.NumberFormat();
 const timeFmt = new Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "2-digit" });
+let cardCounter = 0;
 
 init();
 
 async function init() {
   for (const id of [
-    "site-title", "site-desc", "sum-servers", "sum-players", "refresh-status", "refresh-btn", "load-error",
-    "featured", "watchlist", "watch-empty", "add-form", "add-error", "card-template", "tooltip", "monitor-updated",
+    "logo-main", "logo-sub", "brand-mini-text", "splash", "overall", "overall-text", "sum-servers", "sum-players",
+    "sum-ping", "join", "join-ip", "join-copy", "ring-fill", "refresh-status", "refresh-btn", "load-error",
+    "featured", "watchlist", "watch-empty", "add-form", "add-error", "card-template", "toast", "toast-title",
+    "toast-text", "tooltip", "monitor-updated",
   ]) {
     els[id] = document.getElementById(id);
   }
+  els.hero = document.querySelector(".hero");
+
+  setupSky();
+  setupSplash();
 
   try {
     const res = await fetch("servers.json", { cache: "no-cache" });
@@ -56,15 +78,19 @@ async function init() {
     els["load-error"].hidden = false;
     state.config = { servers: [] };
   }
-
-  const { title, description } = state.config;
-  if (title) els["site-title"].textContent = document.title = title;
-  if (description) els["site-desc"].textContent = description;
+  applyBranding();
 
   for (const server of state.config.servers ?? []) createCard(normalizeServer(server), "featured");
   state.watchlist = loadWatchlist();
   for (const server of state.watchlist) createCard(server, "watch");
   updateWatchEmpty();
+
+  const main = state.config.servers?.[0];
+  if (main) {
+    els["join-ip"].textContent = main.address;
+    els["join"].hidden = false;
+    els["join-copy"].addEventListener("click", () => copyText(main.address));
+  }
 
   els["refresh-btn"].addEventListener("click", () => refreshAll());
   els["add-form"].addEventListener("submit", onAddServer);
@@ -74,6 +100,54 @@ async function init() {
   loadHistory();
   refreshAll();
   setInterval(tick, 1000);
+  setInterval(setupSky, 5 * 60 * 1000);
+}
+
+function applyBranding() {
+  const { title, brand, tagline } = state.config;
+  if (title) document.title = title;
+  if (brand) {
+    els["logo-main"].textContent = brand.toUpperCase();
+    els["brand-mini-text"].textContent = brand;
+  }
+  if (tagline) els["logo-sub"].textContent = tagline;
+}
+
+// ---------------------------------------------------------------------------
+// Sky: day/night follows the visitor's local time (?hour=21 to preview)
+
+function setupSky() {
+  const hourParam = Number(new URLSearchParams(location.search).get("hour"));
+  const now = new Date();
+  const hour = Number.isFinite(hourParam) && hourParam > 0 ? hourParam % 24 : now.getHours() + now.getMinutes() / 60;
+  const phase = hour >= 5 && hour < 7 ? "dawn" : hour >= 7 && hour < 18 ? "day" : hour >= 18 && hour < 20 ? "dusk" : "night";
+  const orb = { dawn: [12, 46], day: [84, 15], dusk: [88, 44], night: [16, 15] }[phase];
+
+  els.hero.dataset.phase = phase;
+  els.hero.style.setProperty("--orb-x", `${orb[0]}%`);
+  els.hero.style.setProperty("--orb-y", `${orb[1]}%`);
+
+  const stars = q(els.hero, ".stars");
+  if (stars.childElementCount) return;
+  let seed = 42;
+  const rand = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+  for (let i = 0; i < 70; i++) {
+    const star = document.createElement("span");
+    star.className = rand() > 0.85 ? "star big" : "star";
+    star.style.left = `${rand() * 100}%`;
+    star.style.top = `${rand() * 100}%`;
+    star.style.animationDelay = `${-rand() * 3.2}s`;
+    stars.append(star);
+  }
+}
+
+function setupSplash() {
+  let index = Math.floor(Math.random() * SPLASHES.length);
+  els.splash.textContent = SPLASHES[index];
+  els.splash.addEventListener("click", () => {
+    index = (index + 1 + Math.floor(Math.random() * (SPLASHES.length - 1))) % SPLASHES.length;
+    els.splash.textContent = SPLASHES[index];
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -140,7 +214,8 @@ function onAddServer(event) {
   saveWatchlist();
   const entry = createCard(server, "watch");
   updateWatchEmpty();
-  refreshEntry(entry).then(updateSummary);
+  refreshEntry(entry);
+  entry.el.scrollIntoView({ behavior: "smooth", block: "nearest" });
 }
 
 function removeFromWatchlist(entry) {
@@ -149,7 +224,6 @@ function removeFromWatchlist(entry) {
   state.cards.delete(entry.key);
   entry.el.remove();
   updateWatchEmpty();
-  updateSummary();
 }
 
 function updateWatchEmpty() {
@@ -229,14 +303,12 @@ async function refreshAll() {
 }
 
 async function refreshEntry(entry) {
-  entry.el.classList.add("is-refreshing");
   try {
     entry.result = await queryServer(entry.server);
   } catch {
     entry.result = { error: "status service unreachable" };
   }
   entry.checkedAt = Date.now();
-  entry.el.classList.remove("is-refreshing");
   if (state.cards.get(entry.key) === entry) renderCard(entry);
 }
 
@@ -252,17 +324,48 @@ function tick() {
 
 function updateRefreshLabel() {
   const seconds = Math.max(0, Math.ceil((state.nextRefreshAt - Date.now()) / 1000));
-  els["refresh-status"].textContent = `Auto-refresh in ${seconds}s`;
+  els["refresh-status"].textContent = `Next check ${seconds}s`;
+  els["ring-fill"].style.strokeDashoffset = String(100 - (seconds / REFRESH_SECONDS) * 100);
 }
 
 function updateSummary() {
-  const entries = [...state.cards.values()];
-  const online = entries.filter((e) => e.result?.online);
+  const featured = [...state.cards.values()].filter((e) => e.kind === "featured");
+  const total = featured.length;
+  const online = featured.filter((e) => e.result?.online);
+  const offline = featured.filter((e) => e.result && !e.result.online && !e.result.error);
   const players = online.reduce((sum, e) => sum + (e.result.players || 0), 0);
-  els["sum-servers"].textContent = `${online.length} / ${entries.length}`;
+  const pings = featured
+    .map((e) => historyFor(e)?.latest)
+    .filter((l) => l?.online && l.latency != null)
+    .map((l) => l.latency);
+
+  els["sum-servers"].textContent = total ? `${online.length}/${total}` : "–";
   els["sum-players"].textContent = numberFmt.format(players);
+  els["sum-ping"].textContent = pings.length ? `${Math.min(...pings)} ms` : "–";
+
+  let overall;
+  let text;
+  if (!total) {
+    overall = "loading";
+    text = "No servers configured";
+  } else if (online.length === total) {
+    overall = "ok";
+    text = total === 1 ? "Server online" : "All servers online";
+  } else if (offline.length === total) {
+    overall = "down";
+    text = total === 1 ? "Server offline" : "All servers offline";
+  } else if (offline.length) {
+    overall = "partial";
+    text = `${offline.length} of ${total} servers offline`;
+  } else {
+    overall = "partial";
+    text = "Status partly unknown";
+  }
+  els.overall.dataset.state = overall;
+  els["overall-text"].textContent = text;
+
   const title = state.config.title || "Minecraft Server Status";
-  document.title = entries.length ? `(${online.length}/${entries.length}) ${title}` : title;
+  document.title = total ? `(${online.length}/${total}) ${title}` : title;
 }
 
 // ---------------------------------------------------------------------------
@@ -288,6 +391,7 @@ async function loadHistory() {
     els["monitor-updated"].textContent = ` (last run ${relativeTime(state.history.updated * 1000)})`;
   }
   for (const entry of state.cards.values()) renderCard(entry);
+  updateSummary();
 }
 
 function historyFor(entry) {
@@ -310,8 +414,14 @@ function createCard(server, kind) {
     q(el, ".server-name").append(tag);
   }
   q(el, ".address-text").textContent = server.address;
-  q(el, ".address").addEventListener("click", () => copyAddress(entry));
+  q(el, ".address").addEventListener("click", () => copyText(server.address));
+  q(el, ".copy-btn").addEventListener("click", () => copyText(server.address));
   q(el, ".server-icon").src = DEFAULT_ICON;
+
+  // Each card's SVG gradient needs its own id.
+  const gradientId = `spark-grad-${++cardCounter}`;
+  q(el, ".spark-grad").id = gradientId;
+  q(el, ".spark-area").setAttribute("fill", `url(#${gradientId})`);
 
   if (kind === "watch") {
     const remove = q(el, ".remove");
@@ -338,32 +448,64 @@ function renderCard(entry) {
   const status = cardState(result);
   const online = status === "online";
   el.dataset.state = status;
-  q(el, ".pill-text").textContent = { loading: "Checking…", online: "Online", offline: "Offline", unknown: "Unknown" }[status];
+  q(el, ".status-text").textContent = { loading: "Checking", online: "Online", offline: "Offline", unknown: "Unknown" }[status];
 
   const icon = q(el, ".server-icon");
   const iconSrc = online && /^data:image\/(png|jpeg|gif|webp);base64,/.test(result.icon ?? "") ? result.icon : DEFAULT_ICON;
   if (icon.src !== iconSrc) icon.src = iconSrc;
 
+  const version = q(el, ".tag-version");
+  const versionText = online ? [result.version, result.software && !result.version?.includes(result.software) ? result.software : null].filter(Boolean).join(" · ") : "";
+  version.textContent = versionText;
+  version.title = versionText;
+  version.hidden = !versionText;
+
   const motd = q(el, ".motd");
-  motd.classList.toggle("motd-empty", !online);
+  motd.classList.toggle("motd-empty", status === "offline" || status === "unknown");
   if (online) renderMotd(result.motd || "A Minecraft Server", motd);
   else {
     motd.textContent = {
-      loading: "Contacting server…",
-      offline: "This server is offline or not responding.",
+      loading: "Loading…",
+      offline: "Can't connect to server. It may be offline or restarting.",
       unknown: `Couldn't check this server right now (${result?.error}). Retrying soon.`,
     }[status];
   }
 
-  const players = q(el, ".stat-players");
-  players.textContent = online ? `${numberFmt.format(result.players)} / ${numberFmt.format(result.max)}` : "–";
-  const version = q(el, ".stat-version");
-  version.textContent = online ? result.version || "Unknown" : "–";
-  version.title = online ? [result.version, result.software].filter(Boolean).join(" · ") : "";
+  const count = q(el, ".xp-count");
+  count.textContent = online ? `${numberFmt.format(result.players)} / ${numberFmt.format(result.max)}` : "–";
+  const fraction = online && result.max > 0 ? Math.min(1, result.players / result.max) : 0;
+  q(el, ".xp-fill").style.setProperty("--fill", `${fraction > 0 ? Math.max(2, fraction * 100) : 0}%`);
 
+  renderSignal(entry);
   renderPlayers(entry);
   renderHistory(entry);
   updateCheckedLabel(entry);
+}
+
+function renderSignal(entry) {
+  const signal = q(entry.el, ".signal");
+  const text = q(signal, ".signal-text");
+  const status = cardState(entry.result);
+  const latest = historyFor(entry)?.latest;
+  const latency = status === "online" && latest?.online ? latest.latency : null;
+
+  if (status === "online") {
+    const level = latency == null ? 5 : latency < 150 ? 5 : latency < 300 ? 4 : latency < 600 ? 3 : latency < 1000 ? 2 : 1;
+    signal.dataset.level = String(level);
+    text.textContent = latency == null ? "" : `${latency} ms`;
+    signal.setAttribute("aria-label", latency == null ? "Online" : `Ping ${latency} ms`);
+    signal.title = latency == null ? "" : "Ping measured from GitHub's servers";
+  } else if (status === "offline") {
+    signal.dataset.level = "0";
+    text.textContent = "No signal";
+    signal.setAttribute("aria-label", "No connection");
+    signal.title = "";
+  } else {
+    delete signal.dataset.level;
+    text.textContent = status === "loading" ? "Pinging…" : "";
+    signal.setAttribute("aria-label", status === "loading" ? "Pinging" : "Unknown");
+    signal.title = "";
+  }
 }
 
 function renderMotd(raw, el) {
@@ -433,7 +575,7 @@ function renderPlayers(entry) {
     box.append(p);
   };
 
-  if (!result.players) return note("Nobody is online right now.");
+  if (!result.players) return note("Nobody's online right now — be the first to join!");
   if (!result.list.length) return note("This server keeps its player list private.");
 
   for (const name of result.list.slice(0, 30)) {
@@ -441,7 +583,7 @@ function renderPlayers(entry) {
     chip.className = "player";
     if (/^[A-Za-z0-9_]{2,16}$/.test(name)) {
       const img = document.createElement("img");
-      img.src = `https://mc-heads.net/avatar/${name}/40`;
+      img.src = `https://mc-heads.net/avatar/${name}/48`;
       img.alt = "";
       img.loading = "lazy";
       img.addEventListener("error", () => img.remove());
@@ -455,7 +597,7 @@ function renderPlayers(entry) {
   const hidden = result.players - Math.min(result.list.length, 30);
   if (hidden > 0) {
     const more = document.createElement("span");
-    more.className = "player no-avatar muted";
+    more.className = "player no-avatar more";
     more.textContent = `+${numberFmt.format(hidden)} more`;
     box.append(more);
   }
@@ -473,54 +615,57 @@ function renderHistory(entry) {
   const checks = history?.checks ?? [];
   const day = checks.filter((c) => c[0] >= now - DAY);
   const note = q(el, ".history-note");
-  const ping = q(el, ".stat-ping");
-  const uptime = q(el, ".stat-uptime");
-
-  const latest = history?.latest;
-  ping.textContent = latest?.online && latest.latency != null ? `${latest.latency} ms` : "–";
-  ping.title = latest?.online ? "Measured from GitHub's servers" : "";
-
   const hasData = day.length > 0;
-  for (const sel of [".bars", ".spark"]) q(el, sel).hidden = !hasData;
-  el.querySelectorAll(".history-label").forEach((n) => (n.hidden = !hasData));
+
+  for (const sel of [".blocks", ".axis", ".spark", ".history-head-spark"]) q(el, sel).hidden = !hasData;
   note.hidden = hasData;
 
+  const figures = q(el, ".uptime-figures");
+  figures.replaceChildren();
   if (!hasData) {
-    uptime.textContent = "–";
     note.textContent =
       entry.kind === "featured"
-        ? "Uptime history appears here after the GitHub Actions monitor runs (every 10 minutes)."
+        ? "Uptime history appears after the monitor's first checks (every 10 minutes)."
         : "Uptime history is only recorded for servers listed in servers.json.";
     return;
   }
 
   const upFraction = (list) => list.filter((c) => c[1]).length / list.length;
-  uptime.textContent = formatPct(upFraction(day));
-  q(el, ".uptime-week").textContent = checks.length > day.length ? `7 days: ${formatPct(upFraction(checks))}` : "";
+  const figure = (value, label) => {
+    const b = document.createElement("b");
+    b.textContent = value;
+    figures.append(b, ` ${label}`);
+  };
+  figure(formatPct(upFraction(day)), "24h");
+  if (checks.length > day.length) {
+    figures.append("  ·  ");
+    figure(formatPct(upFraction(checks)), "7d");
+  }
 
-  // Uptime bars: 48 slots of 30 minutes.
-  const bars = q(el, ".bars");
-  bars.replaceChildren();
+  // Uptime blocks: 48 slots of 30 minutes.
+  const blocks = q(el, ".blocks");
+  blocks.replaceChildren();
   const start = now - DAY;
   let down = 0;
   for (let i = 0; i < DAY / SLOT; i++) {
     const from = start + i * SLOT;
     const inSlot = day.filter((c) => c[0] >= from && c[0] < from + SLOT);
-    const bar = document.createElement("span");
-    const online = inSlot.filter((c) => c[1]).length;
+    const block = document.createElement("span");
+    const up = inSlot.filter((c) => c[1]).length;
     const range = `${timeFmt.format(from * 1000)} – ${timeFmt.format((from + SLOT) * 1000)}`;
     if (!inSlot.length) {
-      bar.className = "bar";
-      bar.dataset.tip = `${range}\nNo data`;
+      block.className = "block";
+      block.dataset.tip = `${range}\nNo data`;
     } else {
-      const kind = online === inSlot.length ? "up" : online === 0 ? "down" : "partial";
-      bar.className = `bar ${kind}`;
-      bar.dataset.tip = `${range}\n${kind === "up" ? "✓ Online" : kind === "down" ? "✕ Offline" : "! Partly offline"} (${online}/${inSlot.length} checks)`;
+      const kind = up === inSlot.length ? "up" : up === 0 ? "down" : "partial";
+      block.className = `block ${kind}`;
+      const label = kind === "up" ? "✔ Online" : kind === "down" ? "✖ Offline" : "⚠ Partly offline";
+      block.dataset.tip = `${range}\n${label} (${up}/${inSlot.length} checks)`;
       if (kind !== "up") down++;
     }
-    bars.append(bar);
+    blocks.append(block);
   }
-  bars.setAttribute("aria-label", `Uptime over the last 24 hours: ${formatPct(upFraction(day))}. ${down} half-hour periods with downtime.`);
+  blocks.setAttribute("aria-label", `Uptime over the last 24 hours: ${formatPct(upFraction(day))}. ${down} half-hour periods with downtime.`);
 
   renderSpark(entry, day, start, now);
 }
@@ -551,10 +696,9 @@ function renderSpark(entry, checks, from, to) {
   }
   closeSegment();
 
-  const svg = q(entry.el, ".spark-svg");
-  q(svg, ".spark-line").setAttribute("d", line);
-  q(svg, ".spark-area").setAttribute("d", area);
-  q(entry.el, ".peak").textContent = `peak ${numberFmt.format(peak)}`;
+  q(entry.el, ".spark-line").setAttribute("d", line);
+  q(entry.el, ".spark-area").setAttribute("d", area);
+  q(entry.el, ".peak").textContent = `Peak ${numberFmt.format(peak)}`;
   entry.spark = { checks, from, to, x, y, W, H };
 }
 
@@ -587,7 +731,7 @@ function setupSparkHover(entry) {
     } else {
       dot.hidden = true;
     }
-    const label = online ? `${numberFmt.format(players ?? 0)} player${players === 1 ? "" : "s"}` : "✕ Offline";
+    const label = online ? `${numberFmt.format(players ?? 0)} player${players === 1 ? "" : "s"}` : "✖ Offline";
     showTip(`${timeFmt.format(time * 1000)}\n${label}`, event.clientX, event.clientY);
   });
   box.addEventListener("pointerleave", hide);
@@ -595,12 +739,8 @@ function setupSparkHover(entry) {
 
 function updateCheckedLabel(entry) {
   const label = q(entry.el, ".checked");
-  if (!entry.checkedAt) {
-    label.textContent = "";
-    return;
-  }
-  const source = entry.result?.source ? ` via ${entry.result.source}` : "";
-  label.textContent = `Checked ${relativeTime(entry.checkedAt)}${source}`;
+  label.textContent = entry.checkedAt ? `Updated ${relativeTime(entry.checkedAt)}` : "";
+  label.title = entry.result?.source ? `Live status via ${entry.result.source}` : "";
 }
 
 function relativeTime(ms) {
@@ -614,16 +754,50 @@ function relativeTime(ms) {
   return `${Math.round(hours / 24)} days ago`;
 }
 
-async function copyAddress(entry) {
-  const hint = q(entry.el, ".copy-hint");
+// ---------------------------------------------------------------------------
+// Copy + advancement-style toast
+
+async function copyText(text) {
+  let copied = false;
   try {
-    await navigator.clipboard.writeText(entry.server.address);
-    hint.textContent = "Copied!";
+    await navigator.clipboard.writeText(text);
+    copied = true;
   } catch {
-    hint.textContent = "Copy failed";
+    // Older browsers: copy from a temporary, invisible text box.
+    const area = document.createElement("textarea");
+    area.value = text;
+    area.readOnly = true;
+    area.style.cssText = "position:fixed;top:0;left:0;opacity:0;font-size:16px";
+    document.body.append(area);
+    area.select();
+    try {
+      copied = document.execCommand("copy");
+    } catch {
+      copied = false;
+    }
+    area.remove();
   }
-  clearTimeout(entry.copyTimer);
-  entry.copyTimer = setTimeout(() => (hint.textContent = "Copy"), 1500);
+  if (copied) showToast("Advancement Made!", `Copied ${text}`);
+  else showToast("Couldn't copy", `Select and copy: ${text}`);
+}
+
+let toastTimer = null;
+
+function showToast(title, text) {
+  const toast = els.toast;
+  els["toast-title"].textContent = title;
+  els["toast-text"].textContent = text;
+  toast.classList.remove("leaving");
+  toast.hidden = false;
+  // Restart the slide-in animation when toasts arrive back to back.
+  toast.style.animation = "none";
+  void toast.offsetWidth;
+  toast.style.animation = "";
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => {
+    toast.classList.add("leaving");
+    toastTimer = setTimeout(() => (toast.hidden = true), 300);
+  }, 2600);
 }
 
 // ---------------------------------------------------------------------------

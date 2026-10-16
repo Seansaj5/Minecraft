@@ -2,133 +2,204 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>SeanSaj Minecraft Status</title>
   <meta name="description" content="Live status, players and uptime for the SeanSaj Minecraft servers.">
-  <meta name="theme-color" content="#5d9b34">
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8' shape-rendering='crispEdges'%3E%3Crect width='8' height='8' fill='%23866043'/%3E%3Crect width='8' height='3' fill='%235d9b34'/%3E%3Crect x='1' y='3' width='1' height='1' fill='%235d9b34'/%3E%3Crect x='4' y='3' width='2' height='1' fill='%235d9b34'/%3E%3Crect x='2' y='5' width='1' height='1' fill='%236b4a30'/%3E%3Crect x='6' y='6' width='1' height='1' fill='%236b4a30'/%3E%3C/svg%3E">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&display=swap">
+  <meta name="theme-color" content="#0d0d10">
+  <meta property="og:title" content="SeanSaj Minecraft Status">
+  <meta property="og:description" content="Live status, players and uptime for the SeanSaj Minecraft servers.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 2 30 9 16 16 2 9Z' fill='%236aab3d'/%3E%3Cpath d='M2 9 16 16v14L2 23Z' fill='%23866043'/%3E%3Cpath d='M16 16 30 9v14l-14 7Z' fill='%23634329'/%3E%3Cpath d='M2 9 16 16v4L2 13Z' fill='%235d9b34'/%3E%3Cpath d='M16 16 30 9v4l-14 7Z' fill='%23467826'/%3E%3C/svg%3E">
+  <link rel="preload" href="assets/fonts/jersey-10-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="assets/style.css">
   <script src="assets/app.js" defer></script>
 </head>
 <body>
-  <header class="site-header">
-    <div class="wrap header-inner">
-      <div class="brand">
-        <span class="logo" aria-hidden="true"></span>
-        <div>
-          <h1 id="site-title">Minecraft Server Status</h1>
-          <p id="site-desc" class="muted"></p>
-        </div>
+  <header class="hero" id="top" data-phase="day">
+    <div class="sky" aria-hidden="true">
+      <div class="stars"></div>
+      <span class="sun"></span>
+      <span class="moon"></span>
+      <div class="clouds">
+        <svg class="cloud-strip" viewBox="0 0 400 40" preserveAspectRatio="none" shape-rendering="crispEdges">
+          <path d="M10 6h44v6h16v8H24v-6H10Z M120 14h30v-6h40v6h12v8h-82Z M250 4h56v8h20v6h-52v-6h-24Z M350 18h36v6h-36Z" />
+        </svg>
+        <svg class="cloud-strip" viewBox="0 0 400 40" preserveAspectRatio="none" shape-rendering="crispEdges">
+          <path d="M10 6h44v6h16v8H24v-6H10Z M120 14h30v-6h40v6h12v8h-82Z M250 4h56v8h20v6h-52v-6h-24Z M350 18h36v6h-36Z" />
+        </svg>
       </div>
-      <dl class="summary" aria-live="polite">
-        <div class="tile">
+      <svg class="hills hills-far" viewBox="0 0 400 40" preserveAspectRatio="none" shape-rendering="crispEdges">
+        <path d="M0 40V22h24v-6h20v-8h28v8h18v6h30v-10h22v-6h26v6h14v14h34v-8h26v-10h30v10h20v8h22v-6h34v-8h22v14h30V40Z" />
+      </svg>
+      <svg class="hills hills-near" viewBox="0 0 400 40" preserveAspectRatio="none" shape-rendering="crispEdges">
+        <path d="M0 40V28h34v-6h26v8h40v-12h24v6h30v10h36v-8h22v-6h28v8h30v-4h26v8h38v-12h24v8h42V40Z" />
+      </svg>
+    </div>
+
+    <nav class="topbar wrap" aria-label="Site">
+      <a class="brand-mini" href="#top">
+        <span class="block-icon" aria-hidden="true"></span>
+        <span id="brand-mini-text">SeanSaj</span>
+      </a>
+      <div class="topbar-links">
+        <a href="#servers">Servers</a>
+        <a href="#more">Add a server</a>
+      </div>
+    </nav>
+
+    <div class="hero-body wrap">
+      <h1 class="logo">
+        <span class="logo-main" id="logo-main">SEANSAJ</span>
+        <span class="logo-sub" id="logo-sub">Minecraft Servers</span>
+        <button type="button" class="splash" id="splash" title="Click for another one">Now with uptime graphs!</button>
+      </h1>
+
+      <p class="overall" id="overall" data-state="loading" aria-live="polite">
+        <span class="overall-dot" aria-hidden="true"></span>
+        <span id="overall-text">Checking servers…</span>
+      </p>
+
+      <dl class="hero-stats">
+        <div class="hero-stat">
           <dt>Servers online</dt>
           <dd id="sum-servers">–</dd>
         </div>
-        <div class="tile">
+        <div class="hero-stat">
           <dt>Players online</dt>
           <dd id="sum-players">–</dd>
         </div>
+        <div class="hero-stat">
+          <dt>Best ping</dt>
+          <dd id="sum-ping">–</dd>
+        </div>
       </dl>
+
+      <div class="join" id="join" hidden>
+        <span class="join-label">Join the server</span>
+        <div class="join-row">
+          <code class="join-ip" id="join-ip"></code>
+          <button type="button" class="mc-btn mc-btn-play" id="join-copy">Copy IP</button>
+        </div>
+        <span class="join-hint">Multiplayer → Add Server → paste the address</span>
+      </div>
     </div>
+
+    <div class="ground" aria-hidden="true"></div>
   </header>
 
-  <main class="wrap">
-    <section aria-labelledby="featured-heading">
+  <main class="underground">
+    <section class="wrap" id="servers" aria-labelledby="servers-heading">
       <div class="section-head">
-        <h2 id="featured-heading">Servers</h2>
+        <h2 id="servers-heading"><span class="h-icon h-icon-grass" aria-hidden="true"></span>Servers</h2>
         <div class="refresh">
-          <span id="refresh-status" class="muted"></span>
-          <button id="refresh-btn" type="button" class="btn">Refresh</button>
+          <svg class="ring" viewBox="0 0 20 20" aria-hidden="true">
+            <circle class="ring-track" cx="10" cy="10" r="8"></circle>
+            <circle class="ring-fill" id="ring-fill" cx="10" cy="10" r="8" pathLength="100"></circle>
+          </svg>
+          <span id="refresh-status">Live</span>
+          <button id="refresh-btn" type="button" class="mc-btn mc-btn-sm">Refresh</button>
         </div>
       </div>
       <p id="load-error" class="notice" role="alert" hidden></p>
       <div id="featured" class="grid"></div>
     </section>
 
-    <section aria-labelledby="watch-heading" class="watch-section">
+    <section class="wrap watch-section" id="more" aria-labelledby="watch-heading">
       <div class="section-head">
-        <h2 id="watch-heading">More servers</h2>
+        <h2 id="watch-heading"><span class="h-icon h-icon-compass" aria-hidden="true"></span>More servers</h2>
       </div>
-      <p class="muted section-note">
-        Check any other Java or Bedrock server. Servers you add here are saved in this browser only &mdash;
-        to give a server uptime history and down alerts for everyone, add it to <code>site/servers.json</code>.
-      </p>
-      <form id="add-form" class="add-form" autocomplete="off">
-        <label class="field field-address">
-          <span>Server address</span>
-          <input name="address" type="text" placeholder="play.example.com:25565" required spellcheck="false" autocapitalize="off">
-        </label>
-        <label class="field">
-          <span>Name <span class="muted">(optional)</span></span>
-          <input name="name" type="text" maxlength="40" placeholder="My server">
-        </label>
-        <label class="field">
-          <span>Edition</span>
-          <select name="edition">
-            <option value="java">Java</option>
-            <option value="bedrock">Bedrock</option>
-          </select>
-        </label>
-        <button type="submit" class="btn btn-primary">Add server</button>
+      <form id="add-form" class="add-panel" autocomplete="off">
+        <p class="add-title">Add Server</p>
+        <div class="add-fields">
+          <label class="field">
+            <span>Server Name <span class="optional">(optional)</span></span>
+            <input name="name" type="text" maxlength="40" placeholder="Minecraft Server">
+          </label>
+          <label class="field field-address">
+            <span>Server Address</span>
+            <input name="address" type="text" placeholder="play.example.com" required spellcheck="false" autocapitalize="off" inputmode="url">
+          </label>
+          <label class="field field-edition">
+            <span>Edition</span>
+            <select name="edition">
+              <option value="java">Java</option>
+              <option value="bedrock">Bedrock</option>
+            </select>
+          </label>
+        </div>
+        <div class="add-actions">
+          <p id="add-error" class="form-error" role="alert"></p>
+          <button type="submit" class="mc-btn">Add Server</button>
+        </div>
+        <p class="add-note">Saved in this browser only. To track uptime and get down alerts for a server, add it to <code>site/servers.json</code>.</p>
       </form>
-      <p id="add-error" class="form-error" role="alert"></p>
-      <p id="watch-empty" class="empty muted">No extra servers yet.</p>
+      <p id="watch-empty" class="empty">No extra servers yet — add one above to keep an eye on it.</p>
       <div id="watchlist" class="grid"></div>
     </section>
   </main>
 
-  <footer class="wrap site-footer muted">
-    <p>
-      Live status from <a href="https://mcstatus.io">mcstatus.io</a> (with <a href="https://mcsrvstat.us">mcsrvstat.us</a> as backup).
-      Uptime, ping and player history are recorded every 10 minutes by GitHub Actions<span id="monitor-updated"></span>.
-    </p>
-    <p>Not affiliated with Mojang or Microsoft.</p>
+  <footer class="bedrock">
+    <div class="wrap footer-inner">
+      <p class="footer-title">You've reached bedrock.</p>
+      <p>
+        Live status from <a href="https://mcstatus.io">mcstatus.io</a> (backup: <a href="https://mcsrvstat.us">mcsrvstat.us</a>).
+        Uptime, ping and player history are recorded every 10 minutes by GitHub Actions<span id="monitor-updated"></span>.
+      </p>
+      <p>Not an official Minecraft product. Not approved by or associated with Mojang or Microsoft.</p>
+    </div>
   </footer>
 
   <template id="card-template">
     <article class="card" data-state="loading">
       <header class="card-head">
-        <img class="server-icon" alt="" width="64" height="64">
+        <div class="icon-wrap"><img class="server-icon" alt="" width="64" height="64"></div>
         <div class="card-title">
           <h3 class="server-name"></h3>
           <button type="button" class="address" title="Copy address">
             <span class="address-text"></span>
-            <span class="copy-hint">Copy</span>
+            <svg class="copy-icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M5 1h8a2 2 0 0 1 2 2v8h-2V3H5Zm-2 4h7a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Zm0 2v7h7V7Z"/></svg>
           </button>
         </div>
-        <span class="pill">
-          <span class="pill-icon" aria-hidden="true"></span>
-          <span class="pill-text">Checking…</span>
-        </span>
       </header>
+
+      <div class="status-row">
+        <span class="status"><span class="status-dot" aria-hidden="true"></span><span class="status-text">Checking…</span></span>
+        <span class="tag tag-version" hidden></span>
+        <span class="signal" role="img">
+          <span class="signal-bars" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
+          <span class="signal-text"></span>
+        </span>
+      </div>
 
       <div class="motd"></div>
 
-      <dl class="stats">
-        <div><dt>Players</dt><dd class="stat-players">–</dd></div>
-        <div><dt>Version</dt><dd class="stat-version">–</dd></div>
-        <div><dt>Ping</dt><dd class="stat-ping">–</dd></div>
-        <div><dt>Uptime 24h</dt><dd class="stat-uptime">–</dd></div>
-      </dl>
-
-      <div class="players"></div>
+      <div class="players-block">
+        <div class="players-head">
+          <span class="label">Players</span>
+          <span class="xp-count">–</span>
+        </div>
+        <div class="xp" aria-hidden="true"><span class="xp-fill"></span></div>
+        <div class="players"></div>
+      </div>
 
       <section class="history">
-        <div class="history-label">
-          <span>Uptime · last 24 hours</span>
-          <span class="uptime-week muted"></span>
+        <div class="history-head">
+          <span class="label">Uptime</span>
+          <span class="uptime-figures"></span>
         </div>
-        <div class="bars" role="img"></div>
-        <div class="history-label">
-          <span>Players · last 24 hours</span>
-          <span class="peak muted"></span>
+        <div class="blocks" role="img"></div>
+        <div class="axis" aria-hidden="true"><span>24h ago</span><span>now</span></div>
+        <div class="history-head history-head-spark">
+          <span class="label">Players · 24h</span>
+          <span class="peak"></span>
         </div>
         <div class="spark">
           <svg class="spark-svg" viewBox="0 0 600 60" preserveAspectRatio="none" aria-hidden="true">
+            <defs>
+              <linearGradient id="" class="spark-grad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#80ff20" stop-opacity="0.35"></stop>
+                <stop offset="1" stop-color="#80ff20" stop-opacity="0"></stop>
+              </linearGradient>
+            </defs>
             <path class="spark-base" d="M0,59 H600"></path>
             <path class="spark-area"></path>
             <path class="spark-line"></path>
@@ -136,16 +207,26 @@
           <span class="spark-cursor" hidden></span>
           <span class="spark-dot" hidden></span>
         </div>
-        <p class="history-note muted" hidden></p>
+        <p class="history-note" hidden></p>
       </section>
 
-      <footer class="card-foot muted">
+      <footer class="card-foot">
         <span class="checked"></span>
-        <button type="button" class="link remove" hidden>Remove</button>
+        <span class="foot-actions">
+          <button type="button" class="link remove" hidden>Remove</button>
+          <button type="button" class="mc-btn mc-btn-sm copy-btn">Copy IP</button>
+        </span>
       </footer>
     </article>
   </template>
 
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden>
+    <span class="toast-icon" aria-hidden="true"></span>
+    <span class="toast-body">
+      <span class="toast-title" id="toast-title">Advancement Made!</span>
+      <span class="toast-text" id="toast-text"></span>
+    </span>
+  </div>
   <div id="tooltip" class="tooltip" role="tooltip" hidden></div>
 </body>
 </html>

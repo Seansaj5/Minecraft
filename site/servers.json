@@ -1,6 +1,8 @@
 {
   "title": "SeanSaj Minecraft Status",
   "description": "Live status, players and uptime for the SeanSaj Minecraft servers.",
+  "brand": "SeanSaj",
+  "tagline": "Minecraft Servers",
   "repo": "Seansaj5/Minecraft",
   "alerts": {
     "enabled": true,
