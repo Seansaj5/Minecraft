@@ -20,13 +20,11 @@ The main page monitors:
 - **More servers** – anyone can add other Java or Bedrock servers from the page. Those are saved in
   their own browser only.
 
-## One-time setup
+## Publishing
 
-1. Open **Settings → Pages** in this repository.
-2. Under **Build and deployment → Source**, choose **GitHub Actions**.
-3. Open the **Actions** tab, select **Deploy website**, and click **Run workflow** (or push any change).
-
-The site will be live at https://seansaj5.github.io/Minecraft/ a minute later.
+GitHub Pages serves the `gh-pages` branch. Every push to `main` that changes `site/` runs the
+**Deploy website** workflow, which copies `site/` to `gh-pages`; the live site updates a minute later.
+You can also run it by hand from the **Actions** tab.
 
 ## Adding or renaming servers
 
@@ -51,7 +49,7 @@ To turn off the issue alerts, set `"alerts": { "enabled": false }`.
 | Piece | File |
 | --- | --- |
 | Website (plain HTML/CSS/JS, no build step) | `site/` |
-| Publishes `site/` to GitHub Pages on every push | `.github/workflows/pages.yml` |
+| Copies `site/` to the `gh-pages` branch (served by GitHub Pages) on every push | `.github/workflows/pages.yml` |
 | Pings the servers every 10 minutes, saves history, opens/closes issues | `.github/workflows/monitor.yml`, `scripts/monitor.mjs` |
 | Uptime history (rewritten each run) | `status-data` branch → `history.json` |
 
