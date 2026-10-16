@@ -1,0 +1,23 @@
+{
+  "title": "SeanSaj Minecraft Status",
+  "description": "Live status, players and uptime for the SeanSaj Minecraft servers.",
+  "brand": "SeanSaj",
+  "tagline": "Minecraft Servers",
+  "repo": "Seansaj5/Minecraft",
+  "alerts": {
+    "enabled": true,
+    "failedChecksBeforeAlert": 2
+  },
+  "servers": [
+    {
+      "name": "Main Server",
+      "address": "direct.seansaj.net",
+      "edition": "java"
+    },
+    {
+      "name": "Server 2",
+      "address": "direct.seansaj.net:25566",
+      "edition": "java"
+    }
+  ]
+}
